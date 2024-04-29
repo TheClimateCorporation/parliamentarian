@@ -24,8 +24,8 @@ def get_description():
 setup(
     name="parliament",
     version=get_version(),
-    author="Duo Security",
-    author_email="scott@summitroute.com",
+    author="The Climate Corporation",
+    author_email="cloudeng@climate.com",
     description=("parliament audits your AWS IAM policies"),
     long_description=get_description(),
     long_description_content_type="text/markdown",
