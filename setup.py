@@ -29,7 +29,7 @@ setup(
     description=("parliament audits your AWS IAM policies"),
     long_description=get_description(),
     long_description_content_type="text/markdown",
-    url="https://github.com/duo-labs/parliament",
+    url="https://github.com/TheClimateCorporation/parliament",
     entry_points={"console_scripts": "parliament=parliament.cli:main"},
     test_suite="tests/unit",
     tests_require=TESTS_REQUIRE,
