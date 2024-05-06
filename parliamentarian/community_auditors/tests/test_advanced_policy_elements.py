@@ -1,4 +1,4 @@
-from parliament import analyze_policy_string
+from parliamentarian import analyze_policy_string
 
 S3_STAR_FINDINGS = {"PERMISSIONS_MANAGEMENT_ACTIONS", "RESOURCE_MISMATCH"}
 

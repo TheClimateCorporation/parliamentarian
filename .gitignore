@@ -9,7 +9,7 @@ venv/
 htmlcov/
 dist/
 .env/
-parliament/private_auditors
+parliamentarian/private_auditors
 tmp/*
 .idea/*
 .vscode

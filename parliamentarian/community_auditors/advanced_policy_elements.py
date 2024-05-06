@@ -12,7 +12,7 @@ from typing import Iterable
 
 import jsoncfg
 
-from parliament import Policy
+from parliamentarian import Policy
 
 
 def get_stmts(policy: Policy) -> Iterable:

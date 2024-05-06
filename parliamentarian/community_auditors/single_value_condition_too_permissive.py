@@ -4,8 +4,8 @@ designed for multi-value condition keys results in "overly permissive policies"
 https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_single-vs-multi-valued-condition-keys.html
 """
 import re
-from parliament import Policy
-from parliament.misc import make_list
+from parliamentarian import Policy
+from parliamentarian.misc import make_list
 
 
 def audit(policy: Policy) -> None:

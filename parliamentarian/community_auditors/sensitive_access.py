@@ -1,6 +1,6 @@
 from collections import defaultdict
 
-from parliament import is_arn_match, expand_action
+from parliamentarian import is_arn_match, expand_action
 
 
 def _expand_action(operation):

@@ -10,14 +10,14 @@ from os.path import abspath
 from os.path import join
 from pathlib import Path
 
-from parliament import (
+from parliamentarian import (
     analyze_policy_string,
     enhance_finding,
     override_config,
     config,
     __version__,
 )
-from parliament.misc import make_list
+from parliamentarian.misc import make_list
 
 logger = logging.getLogger(__name__)
 

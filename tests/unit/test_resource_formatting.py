@@ -1,10 +1,10 @@
-from parliament import (
+from parliamentarian import (
     analyze_policy_string,
     is_arn_match,
     is_arn_strictly_valid,
     is_glob_match,
 )
-from parliament.statement import is_valid_region, is_valid_account_id
+from parliamentarian.statement import is_valid_region, is_valid_account_id
 
 
 class TestResourceFormatting:
