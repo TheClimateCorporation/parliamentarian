@@ -8,6 +8,8 @@ venv/
 .coverage
 htmlcov/
 dist/
+build/
+docs/
 .env/
 parliamentarian/private_auditors
 tmp/*
