@@ -1,4 +1,4 @@
-import parliament
+import parliamentarian
 
 
 class TestPrivilegData:
@@ -6,13 +6,13 @@ class TestPrivilegData:
 
     def test_minimum_number_of_services(self):
         assert (
-            len(parliament.iam_definition) > 220
+                len(parliamentarian.iam_definition) > 220
         ), "There should be over 220 services in the definition file"
 
     def test_contains_all_elements(self):
         # Find the ec2 service
         ec2_service = None
-        for service in parliament.iam_definition:
+        for service in parliamentarian.iam_definition:
             if service["prefix"] == "ec2":
                 ec2_service = service
                 break

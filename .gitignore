@@ -8,8 +8,10 @@ venv/
 .coverage
 htmlcov/
 dist/
+build/
+docs/
 .env/
-parliament/private_auditors
+parliamentarian/private_auditors
 tmp/*
 .idea/*
 .vscode

@@ -1,6 +1,6 @@
 import jsoncfg
 import json
-from parliament import analyze_policy_string
+from parliamentarian import analyze_policy_string
 
 
 class TestAuthDetailsFile:

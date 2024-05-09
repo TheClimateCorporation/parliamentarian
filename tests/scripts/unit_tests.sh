@@ -4,13 +4,13 @@ if [ -f .coverage ]; then
 fi
 
 export PRIVATE_TESTS=""
-if [ -d parliament/private_auditors/tests/ ]; then
-  export PRIVATE_TESTS="parliament/private_auditors/tests/"
+if [ -d parliamentarian/private_auditors/tests/ ]; then
+  export PRIVATE_TESTS="parliamentarian/private_auditors/tests/"
 fi
 
 export COMMUNITY_TESTS
-if [ -d parliament/community_auditors/tests/ ]; then
-  export COMMUNITY_TESTS="parliament/community_auditors/tests/"
+if [ -d parliamentarian/community_auditors/tests/ ]; then
+  export COMMUNITY_TESTS="parliamentarian/community_auditors/tests/"
 fi
 
 pytest tests/unit --cov-report html --cov --cov-config=.coveragerc
