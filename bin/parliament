@@ -6,5 +6,5 @@ from pathlib import Path
 path = Path(os.path.abspath(__file__))
 sys.path.append(str(path.parent.parent))
 
-from parliament.cli import main
+from parliamentarian.cli import main
 main()

@@ -1,7 +1,7 @@
-import parliament
+import parliamentarian
 
-from parliament import UnknownPrefixException, UnknownActionException
-from parliament.statement import expand_action
+from parliamentarian import UnknownPrefixException, UnknownActionException
+from parliamentarian.statement import expand_action
 
 
 class TestActionExpansion:
