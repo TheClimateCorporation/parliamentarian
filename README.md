@@ -1,4 +1,7 @@
-parliament is an AWS IAM linting library. It reviews policies looking for problems such as:
+# Parliamentarian
+
+Parliamentarian is an AWS IAM linting library forked from the original [parliament](https://github.com/duo-labs/parliament). It reviews policies looking for problems such as:
+
 - malformed json
 - missing required elements
 - incorrect prefix and action names
@@ -10,13 +13,15 @@ This library duplicates (and adds to!) much of the functionality in the web cons
 
 [demo](https://parliament.summitroute.com/)
 
-# Installation
-```
+## Installation
+
+```bash
 pip install parliament
 ```
 
-# Usage
-```
+## Usage
+
+```bash
 cat > test.json << EOF
 {
     "Version": "2012-10-17",
@@ -32,23 +37,26 @@ parliament --file test.json
 ```
 
 This will output:
-```
+
+```bash
 MEDIUM - No resources match for the given action -  - [{'action': 's3:GetObject', 'required_format': 'arn:*:s3:::*/*'}] - {'actions': ['s3:GetObject'], 'filepath': 'test.json'}
 ```
 
 This example is showing that the action s3:GetObject requires a resource matching an object path (ie. it must have a "/" in it).
 
 The different input types allowed include:
+
 - --file: Filename
 - --directory: A directory path, for exmaple: `--directory . --include_policy_extension json --exclude_pattern ".*venv.*"`
-- --aws-managed-policies: For use specifically with the repo https://github.com/z0ph/aws_managed_policies
+- --aws-managed-policies: For use specifically with the repo <https://github.com/z0ph/aws_managed_policies>
 - --auth-details-file: For use with the file returned by "aws iam get-account-authorization-details"
 - --string: Provide a string such as '{"Version": "2012-10-17","Statement": {"Effect": "Allow","Action": ["s3:GetObject", "s3:PutBucketPolicy"],"Resource": ["arn:aws:s3:::bucket1", "arn:aws:s3:::bucket2/*"]}}'
 
-## Using parliament as a library
+### Using parliament as a library
+
 Parliament was meant to be used a library in other projects. A basic example follows.
 
-```
+```python
 from parliament import analyze_policy_string
 
 analyzed_policy = analyze_policy_string(policy_doc)
@@ -56,10 +64,11 @@ for f in analyzed_policy.findings:
   print(f)
 ```
 
-## Custom config file
+### Custom config file
+
 You may decide you want to change the severity of a finding, the text associated with it, or that you want to ignore certain types of findings.  To support this, you can provide an override config file.  First, create a test.json file:
 
-```
+```json
 {
     "Version": "2012-10-17",
     "Id": "123",
@@ -79,6 +88,7 @@ You may decide you want to change the severity of a finding, the text associated
 ```
 
 This will have two findings:
+
 - LOW - Unknown action -  - Unknown action s3:abc
 - MEDIUM - No resources match for the given action
 
@@ -86,7 +96,7 @@ The second finding will be very long, because every s3 and ec2 action are expand
 
 Now create a file `config_override.yaml` with the following contents:
 
-```
+```yaml
 UNKNOWN_ACTION:
   severity: MEDIUM
   ignore_locations:
@@ -110,7 +120,8 @@ Now rename `test.json` to `testa.json` and rerun the command.  You will no longe
 You can also check the exit status with `echo $?` and see the exit status is 0 when there are no findings. The exit status will be non-zero when there are findings.
 
 You can have multiple elements in `ignore_locations`.  For example,
-```
+
+```yaml
 - filepath: "test.json"
   action: "s3:GetObject"
   resource: 
@@ -121,13 +132,15 @@ You can have multiple elements in `ignore_locations`.  For example,
 
 Assuming the finding has these types of values in the `location` element, this will ignore any finding that matches the filepath to "test.json" AND action to "s3:GetObject" AND the resource to "a" OR "b".  It will also ignore a resource that matches "c.*".
 
-# Custom auditors
+## Custom auditors
 
-## Private Auditors
+### Private Auditors
+
 This section will show how to create your own private auditor to look for any policies that grant access to either of the sensitive buckets `secretbucket` and `othersecretbucket`.
 
 Create a file `test.json` with contents:
-```
+
+```json
 {
     "Version": "2012-10-17",
     "Statement": {
@@ -137,11 +150,12 @@ Create a file `test.json` with contents:
     }
 }
 ```
+
 This is an example of the policy we want to alert on. That policy will normally not generate any findings.
 
 Create the file `config_override.yaml` with contents:
 
-```
+```yaml
 SENSITIVE_BUCKET_ACCESS:
   title: Sensitive bucket access
   description: Allows read access to an important S3 bucket
@@ -151,8 +165,7 @@ SENSITIVE_BUCKET_ACCESS:
 
 In the `parliament` directory (that contains iam_definition.json), create the directory `private_auditors` and the file `parliament/private_auditors/sensitive_bucket_access.py`
 
-
-```
+```python
 from parliament import is_arn_match, expand_action
 
 def audit(policy):
@@ -173,7 +186,8 @@ def audit(policy):
 This will look for any s3 access to the buckets of interest, including not only object access such as `s3:GetObject` access, but also things like `s3:PutBucketAcl`.
 
 Running against our test file, we'll get the following output:
-```
+
+```bash
 ./bin/parliament --file test.json --config config_override.yaml --json
 
 {"issue": "SENSITIVE_BUCKET_ACCESS", "title": "Sensitive bucket access", "severity": "MEDIUM", "description": "Allows read access to an important S3 bucket", "detail": "", "location": {"action": "s3:GetObject", "resource": "arn:aws:s3:::secretbucket/*", "filepath": "test.json"}}
@@ -182,7 +196,7 @@ Running against our test file, we'll get the following output:
 You can now decide if this specific situation is ok for you, and choose to ignore it by modifying the
 `config_override.yaml` to include:
 
-```
+```yaml
 ignore_locations:
   - filepath: "test.json"
     action: "s3:GetObject"
@@ -191,7 +205,7 @@ ignore_locations:
 
 Notice that I had to double-escape the escape asterisk.  If another policy is created, say in test2.json that you'd like to ignore, you can just append those values to the list:
 
-```
+```yaml
 ignore_locations:
   - filepath: "test.json"
     action: "s3:GetObject"
@@ -203,7 +217,7 @@ ignore_locations:
 
 Or you could do:
 
-```
+```yaml
 ignore_locations:
   - filepath:
     - "test.json"
@@ -216,7 +230,7 @@ ignore_locations:
 
 To create unit tests for our new private auditor, create the directory `./parliament/private_auditors/tests/` and create the file `test_sensitive_bucket_access.py` there with the contents:
 
-```
+```python
 from parliament import analyze_policy_string
 
 class TestCustom():
@@ -238,37 +252,43 @@ That test ensures that for the given policy (which is granting read access to ou
 
 Now when you run `./tests/scripts/unit_tests.sh` there should be one additional test run.
 
-
 ## Community auditors
 
-* The process for community auditors is the same as private auditors, except that:
- - The community auditors are located in the `parliament/community_auditors` folder instead of the `parliament/private_auditors`
- - The community auditors are bundled with the package and users can include them in their testing by specifying `--include-community-auditors` flag.
+The process for community auditors is the same as private auditors, except that:
 
-# Development
+- The community auditors are located in the `parliament/community_auditors` folder instead of the `parliament/private_auditors`
+- The community auditors are bundled with the package and users can include them in their testing by specifying `--include-community-auditors` flag.
+
+## Development
+
 Setup a testing environment
-```
+
+```bash
 python3 -m venv ./venv && source venv/bin/activate
 pip3 install -r requirements.txt
 ```
 
 Run unit tests with:
-```
+
+```bash
 make test
 ```
 
 Run locally as:
-```
+
+```bash
 bin/parliament
 ```
 
-## Updating the privilege info
+### Updating the privilege info
+
 The IAM data is obtained from scraping the docs [here](https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_actions-resources-contextkeys.html) and parsing this information with beautifulsoup using `./utils/update_iam_data.py`.
 
-# Projects that use Parliament
+## Projects that use Parliament
+
 - [CloudMapper](https://github.com/duo-labs/cloudmapper): Has functionality to audit AWS environments and will audit the IAM policies as part of that.
 - [tf-parliament](https://github.com/rdkls/tf-parliament): Runs Parliament against terraform files
-- [iam-lint](https://github.com/xen0l/iam-lint): Github action for linting AWS IAM policy documents 
+- [iam-lint](https://github.com/xen0l/iam-lint): Github action for linting AWS IAM policy documents
 - [Paco](https://paco-cloud.io): Cloud orchestration tool that integrates Parliament as a library to verify a project's IAM Policies and warns about findings.
 - [ConsoleMe](https://github.com/Netflix/consoleme): Web service that makes administering and using multiple AWS accounts easier, that uses Parliament for linting IAM Policies
 - [iamlive](https://github.com/iann0036/iamlive): Generates IAM Policies from observing AWS calls through client-side monitoring
