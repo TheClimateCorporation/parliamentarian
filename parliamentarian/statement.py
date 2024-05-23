@@ -444,10 +444,8 @@ class Statement:
                 if key == "AWS":
                     for aws_principal in make_list(json_object[1]):
                         text = aws_principal.value
-                        account_id_regex = re.compile("^\d{12}$")
-                        arn_regex = re.compile(
-                            "^arn:[-a-z\*]*:iam::(\d{12}|cloudfront|):.*$"
-                        )
+                        account_id_regex = re.compile(r"^\d{12}$")
+                        arn_regex = re.compile(r"^arn:[-a-z\*]*:iam::(\d{12}|cloudfront|):.*$")
 
                         if text == "*":
                             pass
@@ -460,9 +458,7 @@ class Statement:
                 elif key == "Federated":
                     for federation in make_list(json_object[1]):
                         federation = federation.value
-                        saml_regex = re.compile(
-                            "^arn:[-a-z\*]*:iam::\d{12}:saml-provider/.*$"
-                        )
+                        saml_regex = re.compile(r"^arn:[-a-z\*]*:iam::\d{12}:saml-provider/.*$")
                         if federation in [
                             "cognito-identity.amazonaws.com",
                             "www.amazon.com",
@@ -717,9 +713,7 @@ class Statement:
             self.effect_allow = False
 
         # Check Sid
-        if "Sid" in self.stmt and not re.fullmatch(
-            "[0-9A-Za-z]*", self.stmt["Sid"].value
-        ):
+        if "Sid" in self.stmt and not re.fullmatch("[0-9A-Za-z]*", self.stmt["Sid"].value):
             # The grammar is defined at https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_grammar.html
             self.add_finding("INVALID_SID", location={"string": self.stmt["Sid"]})
             return False

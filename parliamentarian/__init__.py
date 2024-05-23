@@ -6,12 +6,12 @@ __version__ = "1.0.0"
 
 import fnmatch
 import functools
+import importlib.resources
 import json
 import re
 from contextlib import ExitStack
 
 import jsoncfg
-import importlib.resources
 import yaml
 
 #

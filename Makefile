@@ -1,4 +1,4 @@
 setup:
-	pip install -r requirements.txt
+	poetry install
 test:
-	bash tests/scripts/unit_tests.sh
+	bash tests/scripts/run-all-tests.sh
