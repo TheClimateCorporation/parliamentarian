@@ -4,7 +4,7 @@ from parliamentarian import (
     is_arn_strictly_valid,
     is_glob_match,
 )
-from parliamentarian.statement import is_valid_region, is_valid_account_id
+from parliamentarian.statement import is_valid_account_id, is_valid_region
 
 
 class TestResourceFormatting:
@@ -48,9 +48,7 @@ class TestResourceFormatting:
         assert is_valid_account_id(""), "Empty account id is allowed"
         assert is_valid_account_id("000000001234"), "This account id is allowed"
         assert not is_valid_account_id("abc"), "Account id must have 12 digits"
-        assert not is_valid_account_id(
-            "00000000123?"
-        ), "Regex not allowed in account id"
+        assert not is_valid_account_id("00000000123?"), "Regex not allowed in account id"
 
     def test_arn_match(self):
         assert is_arn_match("object", "arn:*:s3:::*/*", "arn:*:s3:::*/*")
@@ -66,12 +64,8 @@ class TestResourceFormatting:
         ), "Object and bucket types should not match"
         assert is_arn_match("bucket", "arn:*:s3:::mybucket*", "arn:*:s3:::mybucket2")
         assert is_arn_match("bucket", "arn:*:s3:::*", "arn:*:s3:::mybucket2")
-        assert not is_arn_match(
-            "object", "arn:*:s3:::*/*", "arn:aws:logs:*:*:/aws/cloudfront/*"
-        )
-        assert not is_arn_match(
-            "object", "arn:aws:s3:::*/*", "arn:aws:logs:*:*:/aws/cloudfront/*"
-        )
+        assert not is_arn_match("object", "arn:*:s3:::*/*", "arn:aws:logs:*:*:/aws/cloudfront/*")
+        assert not is_arn_match("object", "arn:aws:s3:::*/*", "arn:aws:logs:*:*:/aws/cloudfront/*")
         assert is_arn_match(
             "cloudfront",
             "arn:aws:logs:*:*:/aws/cloudfront/*",
@@ -90,9 +84,7 @@ class TestResourceFormatting:
             "arn:aws:iam::123456789012:user/Development/product_1234/*",
         )
 
-        assert is_arn_strictly_valid(
-            "user", "arn:*:iam::*:user/*", "arn:aws:iam::123456789012:*"
-        )
+        assert is_arn_strictly_valid("user", "arn:*:iam::*:user/*", "arn:aws:iam::123456789012:*")
 
         assert is_arn_strictly_valid(
             "ssm",
@@ -126,14 +118,10 @@ class TestResourceFormatting:
         )
 
     def test_arn_match_s3_withregion(self):
-        assert not is_arn_match(
-            "object", "arn:*:s3:::*/*", "arn:aws:s3:us-east-1::bucket1/*"
-        )
+        assert not is_arn_match("object", "arn:*:s3:::*/*", "arn:aws:s3:us-east-1::bucket1/*")
 
     def test_arn_match_s3_withaccount(self):
-        assert not is_arn_match(
-            "object", "arn:*:s3:::*/*", "arn:aws:s3::123412341234:bucket1/*"
-        )
+        assert not is_arn_match("object", "arn:*:s3:::*/*", "arn:aws:s3::123412341234:bucket1/*")
 
     def test_arn_match_s3_withregion_account(self):
         assert not is_arn_match(
@@ -141,9 +129,7 @@ class TestResourceFormatting:
         )
 
     def test_arn_match_iam_emptysegments(self):
-        assert not is_arn_match(
-            "role", "arn:*:iam::*:role/*", "arn:aws:iam:::role/my-role"
-        )
+        assert not is_arn_match("role", "arn:*:iam::*:role/*", "arn:aws:iam:::role/my-role")
 
     def test_arn_match_iam_withregion(self):
         assert not is_arn_match(

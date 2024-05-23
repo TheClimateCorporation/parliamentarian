@@ -21,9 +21,7 @@ class TestPermissionsManagement:
           ]
         }
         """
-        policy = analyze_policy_string(
-            example_policy_string, include_community_auditors=True
-        )
+        policy = analyze_policy_string(example_policy_string, include_community_auditors=True)
 
         assert_equal(
             policy.finding_ids,

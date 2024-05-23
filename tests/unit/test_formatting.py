@@ -20,9 +20,7 @@ class TestFormatting:
         "Resource": "*"}}""",
             ignore_private_auditors=True,
         )
-        assert policy.finding_ids == set(
-            ["MALFORMED"]
-        ), "Policy contains Action and NotAction"
+        assert policy.finding_ids == set(["MALFORMED"]), "Policy contains Action and NotAction"
 
     def test_analyze_policy_string_no_action(self):
         policy = analyze_policy_string(
@@ -53,9 +51,7 @@ class TestFormatting:
         "Resource": "*"}}""",
             ignore_private_auditors=True,
         )
-        assert policy.finding_ids == set(
-            ["INVALID_SID"]
-        ), "Policy statement has invalid Sid"
+        assert policy.finding_ids == set(["INVALID_SID"]), "Policy statement has invalid Sid"
 
     def test_analyze_policy_string_correct_simple(self):
         policy = analyze_policy_string(
@@ -442,9 +438,7 @@ class TestFormatting:
             ignore_private_auditors=True,
         )
 
-        assert policy.finding_ids == set(
-            ["RESOURCE_STAR", "MISMATCHED_TYPE_BUT_USABLE"]
-        )
+        assert policy.finding_ids == set(["RESOURCE_STAR", "MISMATCHED_TYPE_BUT_USABLE"])
 
     def test_duplicate_sids(self):
         policy = analyze_policy_string(

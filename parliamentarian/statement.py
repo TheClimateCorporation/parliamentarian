@@ -1,14 +1,16 @@
 import json
-import jsoncfg
 import re
 
+import jsoncfg
+from jsoncfg.config_classes import ConfigJSONArray, ConfigJSONObject
+
 from . import (
+    UnknownActionException,
+    UnknownPrefixException,
+    expand_action,
     iam_definition,
     is_arn_match,
     is_arn_strictly_valid,
-    expand_action,
-    UnknownActionException,
-    UnknownPrefixException,
 )
 from .finding import Finding
 from .misc import make_list
@@ -158,9 +160,6 @@ GLOBAL_CONDITION_KEYS = {
     "aws:PrincipalServiceName": "String",
     "aws:PrincipalServiceNamesList": "String",
     "aws:PrincipalTag": "String",
-    "aws:PrincipalType": "String",
-    "aws:RequestedRegion": "String",
-    "aws:SecureTransport": "Bool",
     "aws:UserAgent": "String",
     # Keys Available for Some Services
     "aws:PrincipalTag/*": "String",
@@ -225,11 +224,11 @@ def is_value_in_correct_format_for_type(type_needed, values):
         # Binary is a base64 encoded value, like "QmluYXJ5VmFsdWVJbkJhc2U2NA=="
         "Binary": "^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$",
         "Bool": "^(true)|(false)$",
-        "Date": "^\d{4}-\d{2}-\d{2}T\d\d:\d\d:\d\dZ$",
+        "Date": r"^\d{4}-\d{2}-\d{2}T\d\d:\d\d:\d\dZ$",
         # Ip is either IPv4 or IPv6 (ex. 203.0.113.0/24 or 2001:DB8:1234:5678::/64)
         # and may not have a range specified (ex. /32)
-        "Ip": "^(\d+.\d+.\d+.\d+(/\d+)?)|\d*:\d*:\d*:\d*:\d*:\d*(/\d+)?$",
-        "Number": "^\d+$",
+        "Ip": r"^(\d+.\d+.\d+.\d+(/\d+)?)|\d*:\d*:\d*:\d*:\d*:\d*(/\d+)?$",
+        "Number": r"^\d+$",
         "String": ".*",  # Strings can be anything
     }
 
@@ -274,10 +273,10 @@ def translate_documentation_types(str):
 
 
 class Statement:
-    findings = []
-    resource_star = {}
+    findings: list[Finding] = []
+    resource_star: dict[str, int] = {}
     effect_allow = True
-    stmt = None
+    stmt: ConfigJSONObject | ConfigJSONArray = None
     sid = None
     policy_id = None
 
@@ -373,9 +372,7 @@ class Statement:
             if "*" not in resource_type:
                 continue
 
-            arn_format = get_arn_format(
-                resource_type, privilege_info["service_resources"]
-            )
+            arn_format = get_arn_format(resource_type, privilege_info["service_resources"])
 
             # At least one resource has to match the action's required resources
             for resource in make_list(self.stmt["Resource"]):
@@ -412,9 +409,7 @@ class Statement:
             location = {"string": location[0]}
             location["line"] = node_location.line
             location["column"] = node_location.column
-        elif "jsoncfg.config_classes.ConfigJSONScalar" in str(
-            type(location.get("string", ""))
-        ):
+        elif "jsoncfg.config_classes.ConfigJSONScalar" in str(type(location.get("string", ""))):
             node_location = jsoncfg.node_location(location["string"])
             location["line"] = node_location.line
             location["column"] = node_location.column
@@ -461,9 +456,7 @@ class Statement:
                         elif arn_regex.match(text):
                             pass
                         else:
-                            self.add_finding(
-                                "UNKNOWN_PRINCIPAL", location=principal, detail=text
-                            )
+                            self.add_finding("UNKNOWN_PRINCIPAL", location=principal, detail=text)
                 elif key == "Federated":
                     for federation in make_list(json_object[1]):
                         federation = federation.value
@@ -525,9 +518,7 @@ class Statement:
             for c in condition_block:
                 value = str(c[1].value).lower()
                 if value != "true" and value != "false":
-                    self.add_finding(
-                        "MISMATCHED_TYPE_OPERATION_TO_NULL", location=condition_block
-                    )
+                    self.add_finding("MISMATCHED_TYPE_OPERATION_TO_NULL", location=condition_block)
                     return False
 
         for block in condition_block:
@@ -538,23 +529,22 @@ class Statement:
 
             # Check for known bad pattern
             if operator.lower() == "bool":
-                if (
-                    key.lower() == "aws:MultiFactorAuthPresent".lower()
-                    and "false" in values
-                ):
+                if key.lower() == "aws:MultiFactorAuthPresent".lower() and "false" in values:
                     self.add_finding(
                         "BAD_PATTERN_FOR_MFA",
-                        detail='The condition {"Bool": {"aws:MultiFactorAuthPresent":"false"}} is bad because aws:MultiFactorAuthPresent may not exist so it does not enforce MFA. You likely want to use a Deny with BoolIfExists.',
+                        detail='The condition {"Bool": {"aws:MultiFactorAuthPresent":"false"}} is bad because '
+                        "aws:MultiFactorAuthPresent may not exist so it does not enforce MFA. You likely want "
+                        "to use a Deny with BoolIfExists.",
                         location=condition_block,
                     )
             elif operator.lower() == "null":
-                if (
-                    key.lower == "aws:MultiFactorAuthPresent".lower()
-                    and "false" in values
-                ):
+                if key.lower == "aws:MultiFactorAuthPresent".lower() and "false" in values:
                     self.add_finding(
                         "BAD_PATTERN_FOR_MFA",
-                        detail='The condition {"Null": {"aws:MultiFactorAuthPresent":"false"}} is bad because aws:MultiFactorAuthPresent it does not enforce MFA, and only checks if the value exists. You likely want to use an Allow with {"Bool": {"aws:MultiFactorAuthPresent":"true"}}.',
+                        detail='The condition {"Null": {"aws:MultiFactorAuthPresent":"false"}} is bad because '
+                        "aws:MultiFactorAuthPresent it does not enforce MFA, and only checks if the value "
+                        'exists. You likely want to use an Allow with {"Bool": {'
+                        '"aws:MultiFactorAuthPresent":"true"}}.',
                         location=condition_block,
                     )
 
@@ -609,9 +599,7 @@ class Statement:
 
                     if condition_type is None:
                         raise Exception(
-                            "Action condition not found in service definition for {}".format(
-                                match
-                            )
+                            "Action condition not found in service definition for {}".format(match)
                         )
 
                     if not is_value_in_correct_format_for_type(condition_type, values):
@@ -627,9 +615,7 @@ class Statement:
                     # if operator_type_requirement.lower() == 'string' and condition_type.lower() = 'arn':
                     #     # Ignore these.
                     #     pass
-                    documenation_condition_type = translate_documentation_types(
-                        condition_type
-                    )
+                    documenation_condition_type = translate_documentation_types(condition_type)
                     if operator_type_requirement != documenation_condition_type:
                         if (
                             operator_type_requirement == "String"
@@ -935,9 +921,7 @@ class Statement:
                     if "*" not in resource_type:
                         continue
 
-                    arn_format = get_arn_format(
-                        resource_type, privilege_info["service_resources"]
-                    )
+                    arn_format = get_arn_format(resource_type, privilege_info["service_resources"])
 
                     all_possible_resources_for_stmt.append(arn_format)
 
@@ -953,9 +937,7 @@ class Statement:
                             self.resource_star[action_key] += 1
                             match_found = True
                             continue
-                        if is_arn_strictly_valid(
-                            resource_type, arn_format, resource.value
-                        ):
+                        if is_arn_strictly_valid(resource_type, arn_format, resource.value):
                             match_found = True
                             continue
 
@@ -1002,7 +984,8 @@ class Statement:
             # - "DateGreaterThan" :{"aws:CurrentTime":"2019-07-16T12:00:00Z"}
 
             for condition in conditions[0]:
-                # The operator is the first element (ex. `StringLike`) and the condition_block follows it
+                # The operator is the first element (ex. `StringLike`)
+                # the condition_block follows it
                 operator = condition[0]
                 condition_block = condition[1]
                 self._check_condition(operator, condition_block, expanded_actions)

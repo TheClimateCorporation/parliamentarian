@@ -97,7 +97,9 @@ class TestPrincipals:
   "Statement":[
     {
       "Effect":"Allow",
-      "Principal": { "AWS": "arn:aws:iam::cloudfront:user/CloudFront Origin Access Identity 00000000000000" },
+      "Principal": {
+        "AWS": "arn:aws:iam::cloudfront:user/CloudFront Origin Access Identity 00000000000000"
+      },
       "Action":["s3:GetObject"],
       "Resource":["arn:aws:s3:::examplebucket/*"]
     }
@@ -105,9 +107,7 @@ class TestPrincipals:
 }""",
             ignore_private_auditors=True,
         )
-        assert (
-            policy.finding_ids == set()
-        ), "S3 bucket policy with CloudFront OAI access"
+        assert policy.finding_ids == set(), "S3 bucket policy with CloudFront OAI access"
 
     def test_bad_principals(self):
         # Good principal

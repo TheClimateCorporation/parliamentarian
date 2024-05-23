@@ -1,21 +1,21 @@
 #!/usr/bin/env python3
 import argparse
 import json
-import jsoncfg
 import logging
 import re
 import sys
 from os import walk
-from os.path import abspath
-from os.path import join
+from os.path import abspath, join
 from pathlib import Path
 
+import jsoncfg
+
 from parliamentarian import (
+    __version__,
     analyze_policy_string,
+    config,
     enhance_finding,
     override_config,
-    config,
-    __version__,
 )
 from parliamentarian.misc import make_list
 
@@ -26,9 +26,7 @@ def is_finding_filtered(finding, minimum_severity="LOW"):
     # Return True if the finding should be filtered (ie. return False if it should be displayed)
     minimum_severity = minimum_severity.upper()
     severity_choices = ["MUTE", "INFO", "LOW", "MEDIUM", "HIGH", "CRITICAL"]
-    if severity_choices.index(finding.severity) < severity_choices.index(
-        minimum_severity
-    ):
+    if severity_choices.index(finding.severity) < severity_choices.index(minimum_severity):
         return True
 
     if finding.ignore_locations:
@@ -134,7 +132,8 @@ def main():
     )
     parser.add_argument(
         "--string",
-        help='Provide a string such as \'{"Version": "2012-10-17","Statement": {"Effect": "Allow","Action": ["s3:GetObject", "s3:PutBucketPolicy"],"Resource": ["arn:aws:s3:::bucket1", "arn:aws:s3:::bucket2/*"]}}\'',
+        help='Provide a string such as \'{"Version": "2012-10-17","Statement": {"Effect": "Allow","Action": ['
+        '"s3:GetObject", "s3:PutBucketPolicy"],"Resource": ["arn:aws:s3:::bucket1", "arn:aws:s3:::bucket2/*"]}}\'',
         type=str,
     )
     parser.add_argument(
@@ -157,12 +156,8 @@ def main():
         help='File name regex pattern to exclude (ex. ".*venv.*")',
         type=str,
     )
-    parser.add_argument(
-        "--minimal", help="Minimal output", default=False, action="store_true"
-    )
-    parser.add_argument(
-        "--json", help="json output", default=False, action="store_true"
-    )
+    parser.add_argument("--minimal", help="Minimal output", default=False, action="store_true")
+    parser.add_argument("--json", help="json output", default=False, action="store_true")
     parser.add_argument(
         "--minimum_severity",
         help="Minimum severity to display. Options: CRITICAL, HIGH, MEDIUM, LOW, INFO",
@@ -171,12 +166,11 @@ def main():
     )
     parser.add_argument(
         "--private_auditors",
-        help="Directory of the private auditors. Defaults to looking in private_auditors in the same directory as the iam_definition.json file.",
+        help="Directory of the private auditors. Defaults to looking in private_auditors in the same directory as the "
+        "iam_definition.json file.",
         default=None,
     )
-    parser.add_argument(
-        "--config", help="Custom config file for over-riding values", type=str
-    )
+    parser.add_argument("--config", help="Custom config file for over-riding values", type=str)
     parser.add_argument(
         "--include-community-auditors",
         help="Use this flag to enable community-provided auditors",
@@ -218,16 +212,12 @@ def main():
     if not sys.stdin.isatty() and args.file.name != "<stdin>":
         parser.error("You cannot pass a file with --file and use stdin together")
 
-    # Change the exit status if there are errors
-    exit_status = 0
     findings = []
 
     if args.include_community_auditors:
         community_auditors_directory = "community_auditors"
         community_auditors_override_file = (
-            Path(abspath(__file__)).parent
-            / community_auditors_directory
-            / "config_override.yaml"
+            Path(abspath(__file__)).parent / community_auditors_directory / "config_override.yaml"
         )
         override_config(community_auditors_override_file)
     override_config(args.config)
