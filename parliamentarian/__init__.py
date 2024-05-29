@@ -14,8 +14,8 @@ from contextlib import ExitStack
 import jsoncfg
 import yaml
 
-#
 file_manager = ExitStack()
+atexit.register(file_manager.close)
 
 # On initialization, load the IAM data
 iam_definition_ref = importlib.resources.files(__name__) / "iam_definition.json"
@@ -45,7 +45,7 @@ def override_config(override_config_path):
 
 def enhance_finding(finding):
     if finding.issue not in config:
-        raise Exception("Unknown finding issue: {}".format(finding.issue))
+        raise Exception(f"Unknown finding issue: {finding.issue}")
     config_settings = config[finding.issue]
     finding.severity = config_settings["severity"]
     finding.title = config_settings["title"]
