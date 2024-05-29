@@ -3,9 +3,10 @@ For AWS policies using conditionals, checking a single valued condition key with
 designed for multi-value condition keys results in "overly permissive policies"
 https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_single-vs-multi-valued-condition-keys.html
 """
+
 import re
+
 from parliamentarian import Policy
-from parliamentarian.misc import make_list
 
 
 def audit(policy: Policy) -> None:
@@ -60,5 +61,6 @@ def audit(policy: Policy) -> None:
                 ):
                     policy.add_finding(
                         "SINGLE_VALUE_CONDITION_TOO_PERMISSIVE",
-                        detail="Checking a single value conditional key against a set of values results in overly permissive policies.",
+                        detail="Checking a single value conditional key against a set of values results in overly "
+                        "permissive policies.",
                     )

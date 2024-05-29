@@ -1,6 +1,6 @@
 from collections import defaultdict
 
-from parliamentarian import is_arn_match, expand_action
+from parliamentarian import expand_action, is_arn_match
 
 
 def _expand_action(operation):
@@ -29,9 +29,7 @@ def audit(policy):
     for action in allowed_actions:
         expanded_action = _expand_action(action)
         service, operation = expanded_action.split(":")
-        action_resources[expanded_action] = policy.get_allowed_resources(
-            service, operation
-        )
+        action_resources[expanded_action] = policy.get_allowed_resources(service, operation)
 
     for action in action_resources:
         for action_resource in action_resources[action]:

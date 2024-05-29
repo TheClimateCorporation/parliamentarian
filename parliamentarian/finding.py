@@ -1,13 +1,16 @@
+from typing import Any
+
+
 class Finding:
     """Class for storing findings"""
 
     issue = ""
     detail = ""
-    location = {}
+    location: dict[str, Any] = {}
     severity = ""
     title = ""
     description = ""
-    ignore_locations = {}
+    ignore_locations: dict[str, Any] = {}
 
     def __init__(self, issue, detail, location):
         self.issue = issue

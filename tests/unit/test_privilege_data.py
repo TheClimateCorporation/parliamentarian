@@ -6,7 +6,7 @@ class TestPrivilegData:
 
     def test_minimum_number_of_services(self):
         assert (
-                len(parliamentarian.iam_definition) > 220
+            len(parliamentarian.iam_definition) > 220
         ), "There should be over 220 services in the definition file"
 
     def test_contains_all_elements(self):

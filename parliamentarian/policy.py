@@ -3,9 +3,11 @@ import logging
 import os
 import pkgutil
 import sys
-import jsoncfg
 from glob import glob
 from pathlib import Path
+
+import jsoncfg
+from jsoncfg.config_classes import ConfigJSONArray, ConfigJSONObject
 
 from . import expand_action
 from .finding import Finding
@@ -14,10 +16,10 @@ from .statement import Statement
 
 
 class Policy:
-    _findings = []
-    policy_json = None
+    _findings: list[Finding] = []
+    policy_json: ConfigJSONObject | ConfigJSONArray = None
     version = None
-    statements = []
+    statements: list[Statement] = []
     policy = None
 
     def __init__(self, policy_json, filepath=None, config=None):
@@ -28,9 +30,7 @@ class Policy:
         self.config = config if config else {}
 
     def add_finding(self, finding, detail="", location={}):
-        if type(location) == tuple and "jsoncfg.config_classes" in str(
-            type(location[1])
-        ):
+        if isinstance(location, tuple) and "jsoncfg.config_classes" in str(type(location[1])):
             location_data = {}
             location_data["string"] = location[0]
             location_data["lineno"] = jsoncfg.node_location(location[1])[0]
@@ -98,9 +98,7 @@ class Policy:
                 expanded_actions = expand_action(action.value, raise_exceptions)
                 for expanded_action in expanded_actions:
                     actions_referenced.add(
-                        "{}:{}".format(
-                            expanded_action["service"], expanded_action["action"]
-                        )
+                        "{}:{}".format(expanded_action["service"], expanded_action["action"])
                     )
 
         # actions_referenced is now a set like: {'lambda:UpdateFunctionCode', 'glue:UpdateDevEndpoint'}
@@ -175,12 +173,12 @@ class Policy:
             # in that bucket then the bucket privilege can be abused to get that object privilege
             for resource in refs[bucket_privilege]:
                 if not (
-                    resource in refs[object_privilege]
-                    or resource + "/*" in refs[object_privilege]
+                    resource in refs[object_privilege] or resource + "/*" in refs[object_privilege]
                 ):
                     self.add_finding(
                         "RESOURCE_POLICY_PRIVILEGE_ESCALATION",
-                        detail="Possible resource policy privilege escalation on {} due to s3:{} not being allowed, but does allow s3:{}".format(
+                        detail="Possible resource policy privilege escalation on {} due to s3:{} not being allowed, "
+                        "but does allow s3:{}".format(
                             resource, object_privilege, bucket_privilege
                         ),
                     )
@@ -248,9 +246,7 @@ class Policy:
             self.version = self.policy_json["Version"].value
 
             if self.version not in ["2012-10-17", "2008-10-17"]:
-                self.add_finding(
-                    "INVALID_VERSION", location=self.policy_json["Version"]
-                )
+                self.add_finding("INVALID_VERSION", location=self.policy_json["Version"])
             elif self.version != "2012-10-17":
                 # TODO I should have a check so that if an older version is being used,
                 # and a variable is detected, it should be marked as higher severity.
@@ -258,9 +254,7 @@ class Policy:
 
         # Check Statements
         if not jsoncfg.node_exists(self.policy_json["Statement"]):
-            self.add_finding(
-                "MALFORMED", detail="Policy does not contain a Statement element"
-            )
+            self.add_finding("MALFORMED", detail="Policy does not contain a Statement element")
             return False
 
         sids = {}
@@ -320,9 +314,7 @@ class Policy:
 
             if len(private_auditors) == 0 and private_auditors_custom_path is not None:
                 raise Exception(
-                    "No private auditors found at {}".format(
-                        private_auditors_custom_path
-                    )
+                    "No private auditors found at {}".format(private_auditors_custom_path)
                 )
 
             # Run them
@@ -338,9 +330,7 @@ class Policy:
             )
 
             community_auditors = {}
-            for importer, name, _ in pkgutil.iter_modules(
-                [community_auditors_directory_path]
-            ):
+            for importer, name, _ in pkgutil.iter_modules([community_auditors_directory_path]):
                 full_package_name = "parliamentarian.%s.%s" % (
                     community_auditors_directory,
                     name,
@@ -358,8 +348,6 @@ class Policy:
                 try:
                     community_auditors[m].audit(self)
                 except Exception as e:
-                    self.add_finding(
-                        "EXCEPTION", detail=str(e), location={"community_auditor": m}
-                    )
+                    self.add_finding("EXCEPTION", detail=str(e), location={"community_auditor": m})
 
         return True

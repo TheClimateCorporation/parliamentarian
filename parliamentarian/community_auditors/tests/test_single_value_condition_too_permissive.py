@@ -1,3 +1,5 @@
+from nose.tools import assert_equal
+
 from parliamentarian import analyze_policy_string
 
 
@@ -26,7 +28,5 @@ class TestSensitiveAccess:
           ]
         }
     """
-    policy = analyze_policy_string(
-        example_policy_string, include_community_auditors=True
-    )
-    assert_equal(policy.finding_ids, set(["SINGLE_VALUE_CONDITION_TOO_PERMISSIVE"]))
+    policy = analyze_policy_string(example_policy_string, include_community_auditors=True)
+    assert_equal(policy.finding_ids, {"SINGLE_VALUE_CONDITION_TOO_PERMISSIVE"})

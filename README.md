@@ -15,6 +15,7 @@ This library duplicates (and adds to!) much of the functionality in the web cons
 
 ## Installation
 
+
 ```bash
 pip install parliament
 ```
@@ -264,8 +265,7 @@ The process for community auditors is the same as private auditors, except that:
 Setup a testing environment
 
 ```bash
-python3 -m venv ./venv && source venv/bin/activate
-pip3 install -r requirements.txt
+poetry install --with dev
 ```
 
 Run unit tests with:

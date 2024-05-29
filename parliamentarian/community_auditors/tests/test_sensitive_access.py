@@ -26,11 +26,7 @@ class TestSensitiveAccess:
           ]
         }
         """
-        config = {
-            "SENSITIVE_ACCESS": {
-                "resources": [{"s3:GetObject": ["arn:aws:s3:::secret*"]}]
-            }
-        }
+        config = {"SENSITIVE_ACCESS": {"resources": [{"s3:GetObject": ["arn:aws:s3:::secret*"]}]}}
         policy = analyze_policy_string(
             example_policy_string, include_community_auditors=True, config=config
         )
@@ -38,9 +34,7 @@ class TestSensitiveAccess:
 
         # Ensure nothing triggers when we change the bucket location
         config = {
-            "SENSITIVE_ACCESS": {
-                "resources": [{"s3:GetObject": ["arn:aws:s3:::otherbucket*"]}]
-            }
+            "SENSITIVE_ACCESS": {"resources": [{"s3:GetObject": ["arn:aws:s3:::otherbucket*"]}]}
         }
         policy = analyze_policy_string(
             example_policy_string, include_community_auditors=True, config=config

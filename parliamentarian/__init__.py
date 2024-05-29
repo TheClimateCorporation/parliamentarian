@@ -1,23 +1,31 @@
 """
 This library is a linter for AWS IAM policies.
 """
+
 __version__ = "1.0.0"
 
+import atexit
 import fnmatch
 import functools
+import importlib.resources
 import json
-import jsoncfg
 import re
+from contextlib import ExitStack
 
-import pkg_resources
+import jsoncfg
 import yaml
 
+file_manager = ExitStack()
+atexit.register(file_manager.close)
+
 # On initialization, load the IAM data
-iam_definition_path = pkg_resources.resource_filename(__name__, "iam_definition.json")
+iam_definition_ref = importlib.resources.files(__name__) / "iam_definition.json"
+iam_definition_path = file_manager.enter_context(importlib.resources.as_file(iam_definition_ref))
 iam_definition = json.load(open(iam_definition_path, "r"))
 
 # And the config data
-config_path = pkg_resources.resource_filename(__name__, "config.yaml")
+config_ref = importlib.resources.files(__name__) / "config.yaml"
+config_path = file_manager.enter_context(importlib.resources.as_file(config_ref))
 config = yaml.safe_load(open(config_path, "r"))
 
 
@@ -38,7 +46,7 @@ def override_config(override_config_path):
 
 def enhance_finding(finding):
     if finding.issue not in config:
-        raise Exception("Uknown finding issue: {}".format(finding.issue))
+        raise Exception(f"Unknown finding issue: {finding.issue}")
     config_settings = config[finding.issue]
     finding.severity = config_settings["severity"]
     finding.title = config_settings["title"]
@@ -58,7 +66,8 @@ def analyze_policy_string(
     """Given a string reperesenting a policy, convert it to a Policy object with findings"""
 
     try:
-        # TODO Need to write my own json parser so I can track line numbers. See https://stackoverflow.com/questions/7225056/python-json-decoding-library-which-can-associate-decoded-items-with-original-li
+        # TODO Need to write my own json parser so I can track line numbers. See
+        # https://stackoverflow.com/questions/7225056/python-json-decoding-library-which-can-associate-decoded-items-with-original-li
         policy_json = jsoncfg.loads_config(policy_str)
     except jsoncfg.parser.JSONConfigParserException as e:
         policy = Policy(None)
@@ -102,9 +111,9 @@ def is_arn_match(resource_type, arn_format, resource):
     - resource: ARN regex from IAM policy
 
 
-    We can cheat some because after the first sections of the arn match, meaning until the 5th colon (with some
-    rules there to allow empty or asterisk sections), we only need to match the ID part.
-    So the above is simplified to "*/*" and "*personalize*".
+    We can cheat some because after the first sections of the arn match, meaning until the 5th
+    colon (with some rules there to allow empty or asterisk sections), we only need to match the
+    ID part. So the above is simplified to "*/*" and "*personalize*".
 
     Let's look at some examples and if these should be marked as a match:
     "*/*" and "*personalize*" -> True
@@ -132,7 +141,8 @@ def is_arn_match(resource_type, arn_format, resource):
         raise Exception("Unexpected format for resource: {}".format(resource))
 
     # For the first 5 parts (ex. arn:aws:SERVICE:REGION:ACCOUNT:), ensure these match appropriately
-    # We do this because we don't want "arn:*:s3:::*/*" and "arn:aws:logs:*:*:/aws/cloudfront/*" to return True
+    # We do this because we don't want "arn:*:s3:::*/*" and "arn:aws:logs:*:*:/aws/cloudfront/*"
+    # to return True
     for position in range(0, 5):
         if arn_parts[position] == "*" and resource_parts[position] != "":
             continue
@@ -143,7 +153,8 @@ def is_arn_match(resource_type, arn_format, resource):
         else:
             return False
 
-    # Everything up to and including the account ID section matches, so now try to match the remainder
+    # Everything up to and including the account ID section matches,
+    # so now try to match the remainder
     arn_id = ":".join(arn_parts[5:])
     resource_id = ":".join(resource_parts[5:])
 
@@ -162,8 +173,9 @@ def is_arn_strictly_valid(resource_type, arn_format, resource):
 
     That should return true because you could have "arn:aws:s3:::personalize/" which matches both.
 
-    However when not using *, must include the resource type in the resource arn and wildcards
-    are not valid for the resource type portion (https://docs.aws.amazon.com/general/latest/gr/aws-arns-and-namespaces.html#genref-aws-service-namesspaces)
+    However, when not using *, must include the resource type in the resource arn and wildcards
+    are not valid for the resource type portion
+    (https://docs.aws.amazon.com/general/latest/gr/aws-arns-and-namespaces.html#genref-aws-service-namesspaces)
 
     Input:
     - resource_type: Example "bucket", this is only used to identify special cases.
@@ -183,7 +195,7 @@ def is_arn_strictly_valid(resource_type, arn_format, resource):
         # : or / and then anything else excluding the resource type string starting with a *
         arn_id_resource_type = re.match(r"(^[^\*][\w-]+)[\/\:].+", arn_id)
 
-        if arn_id_resource_type != None and resource_id != "*":
+        if arn_id_resource_type is not None and resource_id != "*":
 
             # https://docs.aws.amazon.com/general/latest/gr/aws-arns-and-namespaces.html#genref-aws-service-namesspaces
             # The following is not allowed: arn:aws:iam::123456789012:u*
@@ -192,7 +204,7 @@ def is_arn_strictly_valid(resource_type, arn_format, resource):
 
         # replace aws variable and check for other colons
         resource_id_no_vars = strip_var_from_arn(resource_id)
-        if ":" in resource_id_no_vars and not ":" in arn_id:
+        if ":" in resource_id_no_vars and ":" not in arn_id:
             return False
 
         return True
@@ -260,9 +272,7 @@ def expand_action(action, raise_exceptions=True):
                     return []
 
             for privilege in service["privileges"]:
-                if fnmatch.fnmatchcase(
-                    privilege["privilege"].lower(), unexpanded_action.lower()
-                ):
+                if fnmatch.fnmatchcase(privilege["privilege"].lower(), unexpanded_action.lower()):
                     actions.append(
                         {
                             "service": service_match["prefix"],
@@ -274,9 +284,7 @@ def expand_action(action, raise_exceptions=True):
         raise UnknownPrefixException("Unknown prefix {}".format(prefix))
 
     if len(actions) == 0 and raise_exceptions:
-        raise UnknownActionException(
-            "Unknown action {}:{}".format(prefix, unexpanded_action)
-        )
+        raise UnknownActionException("Unknown action {}:{}".format(prefix, unexpanded_action))
 
     return actions
 
@@ -326,4 +334,4 @@ def get_privilege_matches_for_resource_type(resource_type_matches):
 
 
 # Import moved here to deal with cyclic dependency
-from .policy import Policy
+from .policy import Policy  # noqa: E402

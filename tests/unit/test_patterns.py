@@ -16,9 +16,7 @@ class TestPatterns:
         }}""",
             ignore_private_auditors=True,
         )
-        assert policy.finding_ids == set(
-            ["BAD_PATTERN_FOR_MFA"]
-        ), "Policy contains bad MFA check"
+        assert policy.finding_ids == set(["BAD_PATTERN_FOR_MFA"]), "Policy contains bad MFA check"
 
     def test_resource_policy_privilege_escalation(self):
         # This policy is actually granting essentially s3:* due to the ability to put a policy on a bucket
@@ -174,10 +172,11 @@ class TestPatterns:
         }]}""",
             ignore_private_auditors=True,
         )
-        # There is one finding for "No resources match for s3:ListAllMyBuckets which requires a resource format of *"
-        assert policy.finding_ids == set(
-            ["RESOURCE_MISMATCH"]
-        ), "Buckets do not match so no escalation possible"
+        # There is one finding for "No resources match for s3:ListAllMyBuckets which requires a
+        # resource format of *"
+        assert policy.finding_ids == {
+            "RESOURCE_MISMATCH"
+        }, "Buckets do not match so no escalation possible"
 
 
 # # # The following test for detections of various bad patterns, but unfortunately
