@@ -4,6 +4,7 @@ This library is a linter for AWS IAM policies.
 
 __version__ = "1.0.0"
 
+import atexit
 import fnmatch
 import functools
 import importlib.resources
